@@ -15,10 +15,10 @@ class ofApp : public ofBaseApp{
     bool debug;
     bool isSending;
     ofxOscSender oscSender;
-    ofxOscReceiver oscReceiver;
+    //ofxOscReceiver oscReceiver;
     
     int receiverResult;
-    int foundResults;
+    int nrOfCountourFinderResults;
     
     ofxPanel gui;
     ofxFloatSlider threshold;
@@ -32,12 +32,17 @@ class ofApp : public ofBaseApp{
     ofxCvColorImage         colorImg;
     ofxCvGrayscaleImage     grayImage;
     ofxCvGrayscaleImage     thresholdImage;
-    ofxCvGrayscaleImage  result;
+   // ofxCvGrayscaleImage     result;
     ofImage previewResult;
     
-    ofVec2f mousePosition;
     
+    int webcamWidth;
+    int webcamHeight;
     
+
+    // debug variables
+    ofVec3f   center;
+    ofRectangle newBoundingBox;
     
 
     

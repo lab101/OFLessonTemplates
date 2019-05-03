@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<group>
+	<threshold>100</threshold>
+	<minArea>100</minArea>
+	<maxArea>262656</maxArea>
+</group>
