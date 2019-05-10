@@ -44,10 +44,13 @@ class ofApp : public ofBaseApp{
     ofVec3f   center;
     ofRectangle newBoundingBox;
     
+    bool isCameraReadySetupDone;
 
     
 	public:
 		void setup();
+        void setupWhenCameraReady();
+    
 		void update();
 		void draw();
 

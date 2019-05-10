@@ -5,18 +5,31 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
     
-    webcamWidth = 1280;
-    webcamHeight = 720;
-
-    isSending = true;
-    // allocate opencv images
-    colorImg.allocate(webcamWidth, webcamHeight);
-    grayImage.allocate(webcamWidth, webcamHeight);
-    thresholdImage.allocate(webcamWidth, webcamHeight);
+    //set according to your webcam hardware
+    webcamWidth = 555;
+    webcamHeight = 999;
+    
+    isCameraReadySetupDone = false;
+    isSending = false;
     
     // starting the videograbber.
     vidGrabber.setVerbose(true);
     vidGrabber.initGrabber(webcamWidth, webcamHeight);
+
+    oscSender.setup("127.0.0.1", 6448);
+
+}
+
+
+void ofApp::setupWhenCameraReady(){
+    
+    webcamWidth = vidGrabber.getWidth();
+    webcamHeight = vidGrabber.getHeight();
+    
+    // allocate opencv images
+    colorImg.allocate(webcamWidth, webcamHeight);
+    grayImage.allocate(webcamWidth, webcamHeight);
+    thresholdImage.allocate(webcamWidth, webcamHeight);
 
     // gui for tweaking
     gui.setup();
@@ -24,11 +37,20 @@ void ofApp::setup(){
     gui.add(minArea.setup("minArea",100,0,webcamWidth * webcamHeight * 0.01));
     gui.add(maxArea.setup("maxArea",100,0,webcamWidth * webcamHeight));
     gui.loadFromFile("settings.xml");
+    
+    isCameraReadySetupDone = true;
 }
+
 
 //--------------------------------------------------------------
 void ofApp::update(){
     vidGrabber.update();
+    
+    if(!isCameraReadySetupDone && vidGrabber.isInitialized()){
+        setupWhenCameraReady();
+    }
+    
+    if(!isCameraReadySetupDone) return;
     
     // conversie webcam pixels naar opencv colorimg
     colorImg.setFromPixels(vidGrabber.getPixels());
@@ -39,7 +61,7 @@ void ofApp::update(){
     thresholdImage.threshold(threshold);
 
     // zoeken naar blobs
-    // paramaters: 1 input image, 2 min blob grootte, 3 max blob grootte, max aantal blobs (less = minder werk), true is voor holes
+    // parameters: 1 input image, 2 min blob grootte, 3 max blob grootte, max aantal blobs (less = minder werk), true is voor holes
     nrOfCountourFinderResults = contourFinder.findContours(thresholdImage, minArea, maxArea, 4, true);
     
     
@@ -53,6 +75,7 @@ void ofApp::update(){
         
         newBoundingBox.set(center.x -maxLenght * 0.5, center.y -maxLenght * 0.5, maxLenght,maxLenght);
       
+        // set the region of interest from where will copy the pixels.
         thresholdImage.setROI(newBoundingBox);
         previewResult.setFromPixels(thresholdImage.getRoiPixels());
         previewResult.resize(10, 10);
@@ -63,13 +86,9 @@ void ofApp::update(){
         for(unsigned char p : previewResult.getPixels()){
             message.addFloatArg(p);
         }
-        oscSender.sendMessage(message);
-
         
         //sending to wekinator
-        
-        
-        
+        oscSender.sendMessage(message);
         
         thresholdImage.resetROI();
         
@@ -78,7 +97,6 @@ void ofApp::update(){
 
     // OSC PART
     // sending to wekinator
-    oscSender.setup("127.0.0.1", 6448);
     // receiving results back
     //oscReceiver.setup(12000);
 
@@ -86,14 +104,13 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
+    
     ofPushMatrix();
     ofScale(0.45, 0.45);
     vidGrabber.draw(0, 0);
     grayImage.draw(webcamWidth + 2,0);
     thresholdImage.draw(0,webcamHeight +2 );
     contourFinder.draw(0, webcamHeight +2);
-    
-  
     
     // debug
     ofDrawCircle(center.x, center.y, 40);
@@ -103,7 +120,9 @@ void ofApp::draw(){
     
     
     ofPushMatrix();
-    ofScale(10.45, 10.45);
+    ofTranslate(webcamWidth + 2,webcamHeight + 2);
+
+    ofScale(10, 10);
     previewResult.draw(0, 0);
     ofPopMatrix();
     
@@ -125,11 +144,9 @@ void ofApp::draw(){
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
+    // toggle sending
     if(key == ' '){
-        
         isSending = !isSending;
-        //   if(!isDrawing) lastLinePos.x = -1;
-        
     }
 }
 
